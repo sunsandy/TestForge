@@ -1,8 +1,8 @@
 import importlib
 import sys
 import os
-from pforge.TestExpr import *
-from pforge.params.DXGIFormats import *
+from TestExpr import *
+from params.DXGIFormats import *
 
 def ParamToNameSegment(param, value):
     """Convert parameter value to test case name segment"""
@@ -50,6 +50,9 @@ def TestArgsToArgList(args):
     return ", ".join(f"{arg}" for arg in args)
 
 def GenerateTests(expr, prefix, macro):
+    if not isinstance(expr, Expr):
+        raise ValueError(f"expr must be an instance of Expr but got {type(expr)}")
+
     testNames = [TestArgsToName(prefix, testArgs) for testArgs in GenerateCommands(expr, ParamToNameSegment)]
     testArgLists = [TestArgsToArgList(testArgs) for testArgs in GenerateCommands(expr, ParamToArg)]
     return [f"{macro}({name}, {argList});" for name, argList in zip(testNames, testArgLists)]
@@ -70,8 +73,8 @@ if __name__ == "__main__":
     
     # Import the test plan module
     module_name = os.path.splitext(os.path.basename(test_plan_module))[0]
-    if test_plan_module.startswith('pforge/test_plans/'):
-        module_name = f"pforge.test_plans.{module_name}"
+    if test_plan_module.startswith('pforge/plans/'):
+        module_name = f"plans.{module_name}"
     testPlan = importlib.import_module(module_name)
     
     if not hasattr(testPlan, "Tests"):
@@ -85,6 +88,5 @@ if __name__ == "__main__":
             f.write(f"#include \"{includeFile}\"\n")
         f.write("\n")
         testPlan.Tests.TestGen.UpdateId(0)
-        filteredTests = testPlan.Tests.TestGen.FilterByContainsIdAndValue(7, 1)
-        f.write("\n".join(GenerateTests(filteredTests, testPlan.Tests.Cpp_CaseNamePrefix, testPlan.Tests.Cpp_TestGeneratorMacro)))
+        f.write("\n".join(GenerateTests(testPlan.Tests.TestGen, testPlan.Tests.Cpp_CaseNamePrefix, testPlan.Tests.Cpp_TestGeneratorMacro)))
         f.write("\n")

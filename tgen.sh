@@ -5,8 +5,9 @@ mkdir -p CppTests
 
 # Generate tests for each test plan
 for test_plan in pforge/plans/*.py; do
-    if [ -f "$test_plan" ] && [ "$(basename "$test_plan")" != "__init__.py" ]; then
+    base_name=$(basename "$test_plan")
+    if [ -f "$test_plan" ] && [ "$base_name" != "__init__.py" ] && [ "$base_name" != "Demo.py" ]; then
         echo "Generating tests for $test_plan..."
-        python tgen.py "$test_plan" CppTests
+        python pforge/TestGen.py "$test_plan" CppTests/TestSamples
     fi
 done
