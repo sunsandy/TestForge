@@ -33,7 +33,7 @@ if __name__ == "__main__":
         for includeFile in test_desc.Cpp_IncludeFiles:
             f.write(f"#include \"{includeFile}\"\n")
         f.write("\n")
-        test_desc.TestGen.UpdateId(0)
-        test_cases = list(GenerateList(test_desc.TestGen))
-        f.write("\n".join(GenerateTestsCode(test_cases, test_desc.Cpp_CaseNamePrefix, test_desc.Cpp_TestGeneratorMacro)))
+        test_desc.GenExpr.UpdateId(0)
+        test_list = test_desc.get_test_list()
+        f.write("\n".join(GenerateTestsCode(test_list, test_desc.Cpp_CaseNamePrefix, test_desc.Cpp_TestGeneratorMacro)))
         f.write("\n")

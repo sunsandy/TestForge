@@ -35,7 +35,7 @@ class TestLoader:
         test_module_name = Path(test_file).stem
         test_module = self.load_module(test_module_name, test_file)
         test_desc: TestDescriptor = FindTestDescriptor(test_module)
-        test_desc.TestGen.UpdateId(0)
+        test_desc.GenExpr.UpdateId(0)
         return test_module
 
 class ParamView:
@@ -122,7 +122,7 @@ def get_expression():
         
         # Load the test module and get its Tests object
         test_module = test_loader.load_test_modules(current_test_file)
-        expr = FindTestDescriptor(test_module).TestGen
+        expr = FindTestDescriptor(test_module).GenExpr
         
         print(f"Tests object type: {type(expr)}")
         print(f"Tests object content: {expr}")
@@ -206,7 +206,7 @@ def get_test_list():
         
         test_cases = list(
             GenerateTestsCode(
-                GenerateList(test_desc.TestGen),  # Get the Tests attribute from TestDescriptor
+                test_desc.get_test_list(),  # Get the Tests attribute from TestDescriptor
                 test_desc.Cpp_CaseNamePrefix,
                 test_desc.Cpp_TestGeneratorMacro
             )
@@ -230,13 +230,13 @@ def get_filtered_test_list_by_value(expr_id, value_index):
         test_module = test_loader.load_test_modules(current_test_file)
         test_desc: TestDescriptor = FindTestDescriptor(test_module)
         print(f"Test module loaded: {test_module}")
-        print(f"Tests object: {test_desc.TestGen}")
+        print(f"Tests object: {test_desc.GenExpr}")
         
         def need_discard(pv: PVPair):
             return pv.param.ID == expr_id and pv.value != pv.param.Values[value_index]
 
         filtered_test_cases = []
-        for test_case_param_args in GenerateList(test_desc.TestGen):
+        for test_case_param_args in test_desc.get_test_list():
             if any(need_discard(pv) for pv in test_case_param_args):
                 continue
             filtered_test_cases.append(test_case_param_args)

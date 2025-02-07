@@ -12,7 +12,7 @@ UserParams = Param("UserParams", ["a, b", "a, c", "1, 2, 3"])
 Tests = TestDescriptor(
     # Test description
     SuiteName = "BlendFormat",
-    TestGen = BlendOp * Format_4B * MSAA + (BlendOp * Format_8B * Union(Width, Height) + UserParams).Doc("Some documentation here, too."),
+    GenExpr = BlendOp * Format_4B * MSAA + (BlendOp * Format_8B * Union(Width, Height) + UserParams).Doc("Some documentation here, too."),
 
     # C++ code generation
     Cpp_IncludeFiles = [

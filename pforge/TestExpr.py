@@ -190,19 +190,22 @@ def GenerateList(expr: typing.Union[Param, Union, Cross, types.ModuleType]):
         )
     elif isinstance(expr, typing.ModuleType):
         test_desc: TestDescriptor = FindTestDescriptor(expr)
-        yield from GenerateList(test_desc.TestGen)
+        yield from GenerateList(test_desc.GenExpr)
 
 
 @dataclass
 class TestDescriptor:
     # Test description
     SuiteName: str
-    TestGen: Expr
+    GenExpr: Expr
 
     # C++ code generation
     Cpp_IncludeFiles: typing.List[str]
     Cpp_TestGeneratorMacro: str
     Cpp_CaseNamePrefix: str
+    
+    def get_test_list(self):
+        yield from GenerateList(self.GenExpr)
 
 # Explicitly export classes and functions
 __all__ = ["Expr", "Param", "Union", "Cross", "TestDescriptor", "GenerateList"]
