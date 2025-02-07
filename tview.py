@@ -4,8 +4,8 @@ import importlib.util
 import sys
 from pathlib import Path
 import os
-from pforge.TestExpr import Param, Cross, Union
-from pforge.TestGen import GenerateTests, ParamToNameSegment, ParamToArg
+from pforge.TestExpr import Param, Cross, Union, TestDescriptor, FindTestDescriptor, PVPair
+from pforge.TestGen import GenerateList, GenerateTestsCode
 
 os.environ['FLASK_ENV'] = 'development'
 os.environ['FLASK_DEBUG'] = '1'
@@ -34,7 +34,8 @@ class TestLoader:
         # Load the test file
         test_module_name = Path(test_file).stem
         test_module = self.load_module(test_module_name, test_file)
-        test_module.Tests.TestGen.UpdateId(0)
+        test_desc: TestDescriptor = FindTestDescriptor(test_module)
+        test_desc.TestGen.UpdateId(0)
         return test_module
 
 class ParamView:
@@ -121,13 +122,13 @@ def get_expression():
         
         # Load the test module and get its Tests object
         test_module = test_loader.load_test_modules(current_test_file)
-        expr = test_module.Tests
+        expr = FindTestDescriptor(test_module).TestGen
         
         print(f"Tests object type: {type(expr)}")
         print(f"Tests object content: {expr}")
         
         print("\nConverting expression...")
-        converted = convert_test_expr(expr.TestGen)
+        converted = convert_test_expr(expr)
         print(f"Converted expression type: {type(converted)}")
         print(f"Converted expression content: {converted.__dict__}")
         
@@ -175,13 +176,13 @@ def get_test_descriptor():
     try:
         print("\nGetting test descriptor...")
         test_module = test_loader.load_test_modules(current_test_file)
-        tests = test_module.Tests
-        
+        test_desc: TestDescriptor = FindTestDescriptor(test_module)
+
         return jsonify({
-            'suiteName': tests.SuiteName,
-            'includeFiles': tests.Cpp_IncludeFiles,
-            'testGeneratorMacro': tests.Cpp_TestGeneratorMacro,
-            'caseNamePrefix': tests.Cpp_CaseNamePrefix
+            'suiteName': test_desc.SuiteName,
+            'includeFiles': test_desc.Cpp_IncludeFiles,
+            'testGeneratorMacro': test_desc.Cpp_TestGeneratorMacro,
+            'caseNamePrefix': test_desc.Cpp_CaseNamePrefix
         })
     except Exception as e:
         print(f"Error in get_test_descriptor: {str(e)}")
@@ -199,14 +200,17 @@ def get_test_list():
         # Load the test module
         print(f"Loading test file: {current_test_file}")
         test_module = test_loader.load_test_modules(current_test_file)
+        test_desc: TestDescriptor = FindTestDescriptor(test_module)
         print(f"Test module loaded: {test_module}")
-        print(f"Tests object: {test_module.Tests}")
+        print(f"Test descriptor: {test_desc}")
         
-        test_cases = list(GenerateTests(
-            test_module.Tests.TestGen,  # Get the Tests attribute from TestDescriptor
-            test_module.Tests.Cpp_CaseNamePrefix,
-            test_module.Tests.Cpp_TestGeneratorMacro
-        ))
+        test_cases = list(
+            GenerateTestsCode(
+                GenerateList(test_desc.TestGen),  # Get the Tests attribute from TestDescriptor
+                test_desc.Cpp_CaseNamePrefix,
+                test_desc.Cpp_TestGeneratorMacro
+            )
+        )
         # print(f"Generated test cases: {test_cases}")
         return jsonify(test_cases)
     except Exception as e:
@@ -224,16 +228,27 @@ def get_filtered_test_list_by_value(expr_id, value_index):
     try:
         print(f"\n=== Generating Filtered Test List for ID {expr_id} and value {value_index} ===")
         test_module = test_loader.load_test_modules(current_test_file)
+        test_desc: TestDescriptor = FindTestDescriptor(test_module)
         print(f"Test module loaded: {test_module}")
-        print(f"Tests object: {test_module.Tests}")
+        print(f"Tests object: {test_desc.TestGen}")
         
-        filtered_expr = test_module.Tests.TestGen.FilterByContainsIdAndValue(expr_id, value_index)
-        if filtered_expr is None:
+        def need_discard(pv: PVPair):
+            return pv.param.ID == expr_id and pv.value != pv.param.Values[value_index]
+
+        filtered_test_cases = []
+        for test_case_param_args in GenerateList(test_desc.TestGen):
+            if any(need_discard(pv) for pv in test_case_param_args):
+                continue
+            filtered_test_cases.append(test_case_param_args)
+        
+        if not filtered_test_cases:
             print(f"No expression found with ID {expr_id} and value {value_index}")
             return jsonify([])
         
-        test_cases = list(GenerateTests(filtered_expr, test_module.Tests.Cpp_CaseNamePrefix, test_module.Tests.Cpp_TestGeneratorMacro))
-        # print(f"Generated test cases: {test_cases}")
+        test_cases = list(
+            GenerateTestsCode(filtered_test_cases, test_desc.Cpp_CaseNamePrefix, test_desc.Cpp_TestGeneratorMacro)
+            )
+
         return jsonify(test_cases)
     except Exception as e:
         print(f"Error generating filtered test list: {str(e)}")
