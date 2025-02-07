@@ -30,7 +30,7 @@ def ParamToArg(param, value):
     if param.Name == "BlendOp":
         return value
     elif param.Name == "Format":
-        return f"DXGI::{str(value).split('.')[-1]}"
+        return f"Format::{str(value).split('.')[-1]}"
     elif param.Name == "MSAA":
         return f"{str(value)}"
     elif param.Name == "Width":

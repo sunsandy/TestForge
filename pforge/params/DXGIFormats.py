@@ -19,7 +19,6 @@ class DXGIFormat(enum.Enum):
     RGBA16_SNORM = DXGIDescriptor("int", 8)
     RGB16_SNORM = DXGIDescriptor("int", 6)
     R16_SNORM = DXGIDescriptor("int", 2)
-    RGBA8_UNORM_SRGB = DXGIDescriptor("uint", 4)
     RGBA8_UNORM = DXGIDescriptor("uint", 4)
     RGB8_UNORM = DXGIDescriptor("uint", 3)
     R8_UNORM = DXGIDescriptor("uint", 1)

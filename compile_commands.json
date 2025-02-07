@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/lsk/code/TestForge/_build/CppTests/TestSamples",
+  "command": "/usr/bin/c++  -I/home/lsk/code/TestForge/CppTests/TestSamples/.. -std=gnu++23 -o CMakeFiles/CppTestsSamples.dir/BlendTests_generated.cpp.o -c /home/lsk/code/TestForge/CppTests/TestSamples/BlendTests_generated.cpp",
+  "file": "/home/lsk/code/TestForge/CppTests/TestSamples/BlendTests_generated.cpp",
+  "output": "CppTests/TestSamples/CMakeFiles/CppTestsSamples.dir/BlendTests_generated.cpp.o"
+},
+{
+  "directory": "/home/lsk/code/TestForge/_build/CppTests/TestSamples",
+  "command": "/usr/bin/c++  -I/home/lsk/code/TestForge/CppTests/TestSamples/.. -std=gnu++23 -o CMakeFiles/CppTestsSamples.dir/main.cpp.o -c /home/lsk/code/TestForge/CppTests/TestSamples/main.cpp",
+  "file": "/home/lsk/code/TestForge/CppTests/TestSamples/main.cpp",
+  "output": "CppTests/TestSamples/CMakeFiles/CppTestsSamples.dir/main.cpp.o"
+}
+]
