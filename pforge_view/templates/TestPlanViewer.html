@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Case Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+    {% raw %}
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: #faf8f6;
+            color: #4a4036;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+        }
+        h2, h3 {
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-weight: 600;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 48px);
+            margin-top: 48px;
+            position: relative;
+            user-select: none;
+            width: 100%;
+            background-color: #faf8f6;
+            box-sizing: border-box;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            width: 100%;
+            padding: 8px 8px 2px 8px;
+            gap: 2px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(222, 208, 198, 0.2);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 1px 2px rgba(107, 92, 76, 0.05),
+                        0 4px 8px rgba(107, 92, 76, 0.02);
+            z-index: 100;
+        }
+        .toolbar-button {
+            font-family: inherit;
+            font-weight: 500;
+            padding: 3px 6px;
+            background-color: #fff;
+            border: 1px solid #efe5d9;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7em;
+            color: #6b5c4c;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .toolbar-button:hover {
+            background-color: #fff9f0;
+            border-color: #e6d5c3;
+        }
+        .file-list {
+            width: 150px;
+            min-width: 50px;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(222, 208, 198, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            transition: all 0.3s;
+            position: relative;
+            height: 100%;
+            box-shadow: 0 1px 2px rgba(107, 92, 76, 0.02);
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+        }
+        .file-list.hidden {
+            width: 0 !important;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            overflow: hidden;
+        }
+        .file-item {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-item:hover {
+            background-color: #eee;
+        }
+        .file-item.active {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .main-view {
+            flex: 1;
+            padding: 24px;
+            overflow: auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            border: 1px solid rgba(222, 208, 198, 0.3);
+            box-shadow: 0 1px 2px rgba(107, 92, 76, 0.02);
+            backdrop-filter: blur(10px);
+        }
+        .property-view {
+            width: 300px;
+            min-width: 200px;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(222, 208, 198, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 0 1px 2px rgba(107, 92, 76, 0.02);
+            backdrop-filter: blur(10px);
+            box-sizing: border-box;
+        }
+        .property-view.hidden {
+            width: 0 !important;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            overflow: hidden;
+        }
+        .toolbar-spacer {
+            flex: 1;
+        }
+        .view-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .node {
+            display: flex;
+            flex-direction: column;
+            margin: 2px 0;
+            padding: 2px;
+            vertical-align: top;
+        }
+        .node-title, .node-content {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 4px;
+            background-color: #fdfaf6;
+            border: 1px solid #efe5d9;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            min-height: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .node-title:hover, .node-content:hover {
+            background-color: #fff9f0;
+        }
+        .node-title-text {
+            font-family: inherit;
+            font-size: 0.9em;
+            color: #6b5c4c;
+            font-style: italic;
+            font-weight: 450;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .id-superscript {
+            font-size: 0.7em;
+            color: #8b7355;
+            vertical-align: super;
+            margin-left: 2px;
+        }
+        .node-content {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 4px;
+            background-color: #fdfaf6;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            min-height: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .node-body {
+            display: flex;
+            flex-direction: column;
+            margin-left: 12px;
+            width: fit-content;
+            box-sizing: border-box;
+        }
+        .param-card {
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            border: 1px solid #efe5d9;
+            border-radius: 6px;
+            overflow: hidden;
+            min-width: 180px;
+            box-shadow: 0 1px 2px rgba(107, 92, 76, 0.05);
+            margin: 0px 0;
+        }
+        .param-card:hover {
+            box-shadow: 0 2px 4px rgba(107, 92, 76, 0.1);
+        }
+        .param-card-title {
+            font-family: inherit;
+            font-weight: 600;
+            background-color: #fff9f0;
+            padding: 4px 6px;
+            border-bottom: 1px solid #efe5d9;
+            font-size: 0.9em;
+            color: #6b5c4c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .param-card-doc {
+            font-family: inherit;
+            font-size: 0.9em;
+            color: #8b7355;
+            font-style: italic;
+            font-weight: 450;
+            margin-left: 8px;
+        }
+        .param-card-content {
+            padding: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: white;
+        }
+        .param-value-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .param-value-item {
+            padding: 1px 2px;
+            border-bottom: 1px solid #eee;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+            color: #444;
+            background-color: white;
+        }
+        .param-value-item:hover {
+            background-color: #f8f8f8;
+        }
+        .param-value-item:last-child {
+            border-bottom: none;
+        }
+        .cross-node {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 4px;
+            padding: 2px;
+            background-color: #fff8e1;
+            margin-left: 4px;
+            border-left: 2px solid #ffa726;
+            padding-left: 4px;
+            border-radius: 8px;
+        }
+        .union-node {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 2px;
+            margin-left: 8px;
+            border-left: 2px solid #9ccc65;
+            padding-left: 4px;
+            border-radius: 8px;
+        }
+        .node-header {
+            cursor: pointer;
+            user-select: none;
+            padding: 0;
+            color: #1976d2;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 1px;
+            font-size: 0.9em;
+        }
+        .node-header:hover {
+            color: #1565c0;
+        }
+        .selected {
+            background-color: #fff3e0 !important;
+            border-color: #ffe0b2 !important;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .collapsed-expr {
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .collapsed-expr:hover {
+            color: #1976d2;
+        }
+        .collapsed-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            min-width: 180px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .collapsed-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .collapsed-card-title {
+            background-color: #f5f5f5;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            font-size: 1em;
+            color: #333;
+        }
+        .collapsed-card-content {
+            padding: 8px 12px;
+            color: #666;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .cross-operator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffa726;
+            font-weight: bold;
+            padding: 0 4px;
+            user-select: none;
+            align-self: center;
+            height: 100%;
+            min-height: 32px;
+        }
+        .resize-handle {
+            width: 4px;
+            background-color: transparent;
+            cursor: col-resize;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        
+        .resize-handle:hover,
+        .resize-handle.dragging {
+            background-color: #2196F3;
+        }
+        .property-item {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .property-key {
+            color: #8b7355;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .property-value {
+            color: #6b5c4c;
+            font-family: monospace;
+            font-size: 0.9em;
+            padding: 4px 8px;
+            background-color: #fdfaf6;
+            border-radius: 2px;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+        .property-list {
+            list-style: none;
+            padding: 0;
+            margin: 4px 0;
+        }
+        .property-list-item {
+            padding: 2px 2px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #333;
+        }
+        .test-list {
+            height: 200px;
+            min-height: 100px;
+            max-height: 40vh;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid rgba(222, 208, 198, 0.3);
+            border-radius: 0 0 12px 12px;
+            padding: 2px 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 1px 2px rgba(107, 92, 76, 0.02);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+        .test-list.hidden {
+            height: 0 !important;
+            min-height: 0;
+            padding: 0;
+            border: none;
+            overflow: hidden;
+        }
+        .resize-handle-horizontal {
+            height: 4px;
+            background-color: transparent;
+            cursor: row-resize;
+            transition: background-color 0.2s;
+            z-index: 10;
+            width: 100%;
+        }
+        .resize-handle-horizontal:hover,
+        .resize-handle-horizontal.dragging {
+            background-color: #2196F3;
+        }
+        .test-list-content {
+            flex: 1;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 1px;
+        }
+        .test-list-empty {
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+        .test-cases {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            margin: 4px;
+        }
+        .test-case-item {
+            padding: 0;
+            background-color: transparent;
+            border: none;
+            border-radius: 0;
+            color: #1F2328;
+            width: 100%;
+            box-sizing: border-box;
+            white-space: pre;
+            word-break: keep-all;
+            margin: 0;
+        }
+        .test-case-item:hover {
+            background-color: #f6f8fa;
+        }
+        .test-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2px;
+            background-color: rgba(179, 247, 218, 0.8);
+            border-bottom: 1px solid rgba(222, 208, 198, 0.3);
+            margin-bottom: 2px;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 6px;
+            flex-shrink: 0;
+            font-size: 0.9em;
+        }
+        .param-value:hover {
+            background-color: #e0e0e0;
+        }
+        .param-values {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 2px;
+        }
+        .param-value {
+            cursor: pointer;
+            padding: 0px 2px;
+            background-color: #fdfaf6;
+            border: 1px solid #efe5d9;
+            border-radius: 2px;
+            border: 1px solid #eee;
+            font-family: monospace;
+            font-size: 0.9em;
+            width: 100%;  /* Account for padding */
+            box-sizing: border-box;
+        }
+        .param-value:hover {
+            background-color: #fff3e0;
+            border-color: #ffe0b2;
+        }
+        .test-cases-container {
+            position: relative;
+            width: 100%;
+        }
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            color: #24292f;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .copy-button:hover {
+            background-color: #f3f4f6;
+            border-color: #1b1f2426;
+        }
+        .copy-button.copied {
+            background-color: #dafbe1;
+            border-color: #1a7f37;
+            color: #1a7f37;
+        }
+        .test-cases {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 8px 8px 12px;
+            background-color: #ffffff;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            margin: 4px;
+            position: relative;
+            font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+        .test-case-item {
+            padding: 0;
+            background-color: transparent;
+            border: none;
+            border-radius: 0;
+            color: #1F2328;
+            width: 100%;
+            box-sizing: border-box;
+            white-space: pre;
+            word-break: keep-all;
+            margin: 0;
+        }
+        .test-case-item:hover {
+            background-color: #f6f8fa;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="toolbar">
+            <h2>Test Case Viewer</h2>
+            <button class="toolbar-button" @click="toggleAll">
+                <span v-text="globalCollapsed ? '▶' : '▼'"></span>
+                <span v-text="globalCollapsed ? 'Expand All' : 'Collapse All'"></span>
+            </button>
+            <div class="toolbar-spacer"></div>
+            <div class="view-controls">
+                <button class="toolbar-button" @click="toggleFileList">
+                    <span v-text="showFileList ? '◀' : '▶'"></span>
+                    <span>Files</span>
+                </button>
+                <button class="toolbar-button" @click="toggleTestList">
+                    <span>Tests</span>
+                    <span v-text="showTestList ? '▼' : '▲'"></span>
+                </button>
+                <button class="toolbar-button" @click="togglePropertyView">
+                    <span>Properties</span>
+                    <span v-text="showPropertyView ? '▶' : '◀'"></span>
+                </button>
+            </div>
+        </div>
+        <div class="container" 
+             @mousemove="handleMouseMove" 
+             @mouseup="handleMouseUp" 
+             @mouseleave="handleMouseUp">
+            <div class="main-container">
+                <div class="file-list" 
+                     :class="{ hidden: !showFileList }" 
+                     :style="showFileList ? { width: fileListWidth + 'px' } : null">
+                    <h3>Test Files</h3>
+                    <div v-for="file in testFiles" 
+                         :key="file.path"
+                         class="file-item"
+                         :class="{ active: file.active }"
+                         @click="loadTestFile(file)">
+                        {{ file.name }}
+                    </div>
+                </div>
+                <div v-if="showFileList" 
+                     class="resize-handle"
+                     :class="{ dragging: isResizingLeft }"
+                     @mousedown="startResizeLeft"></div>
+                <div class="main-view">
+                    <expression-tree 
+                        :node="expression" 
+                        @node-selected="selectNode"
+                        @load-filtered-list="loadFilteredTestList"
+                        :selected-node="selectedNode"
+                        :global-collapsed="globalCollapsed">
+                    </expression-tree>
+                </div>
+                <div v-if="showPropertyView" 
+                     class="resize-handle"
+                     :class="{ dragging: isResizingRight }"
+                     @mousedown="startResizeRight"></div>
+                <div class="property-view" 
+                     :class="{ hidden: !showPropertyView }"
+                     :style="showPropertyView ? { width: propertyViewWidth + 'px' } : null">
+                    <h3>Properties</h3>
+                    <div v-if="selectedNode">
+                        <div v-if="selectedNode.type === 'param'">
+                            <div class="property-item">
+                                <div class="property-key">Type</div>
+                                <div class="property-value">Parameter</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-key">Name</div>
+                                <div class="property-value">{{ selectedNode.name }}</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-key">Values</div>
+                                <ul class="property-list">
+                                    <li v-for="value in selectedNode.values" 
+                                        class="property-list-item">{{ value }}</li>
+                                </ul>
+                            </div>
+                            <div v-if="selectedNode.doc" class="property-item">
+                                <div class="property-key">Documentation</div>
+                                <div class="property-value">{{ selectedNode.doc }}</div>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <div class="property-item">
+                                <div class="property-key">Type</div>
+                                <div class="property-value">{{ selectedNode.type === 'cross' ? 'Cross Product' : 'Union' }}</div>
+                            </div>
+                            <div v-if="selectedNode.doc" class="property-item">
+                                <div class="property-key">Documentation</div>
+                                <div class="property-value">{{ selectedNode.doc }}</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-key">Items Count</div>
+                                <div class="property-value">{{ selectedNode.items.length }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <div class="property-item">
+                            <div class="property-key">Suite Name</div>
+                            <div class="property-value">{{ testDescriptor.suiteName }}</div>
+                        </div>
+                        <div class="property-item">
+                            <div class="property-key">Include Files</div>
+                            <ul class="property-list">
+                                <li v-for="file in testDescriptor.includeFiles" 
+                                    class="property-list-item">{{ file }}</li>
+                            </ul>
+                        </div>
+                        <div class="property-item">
+                            <div class="property-key">Test Generator Macro</div>
+                            <div class="property-value">{{ testDescriptor.testGeneratorMacro }}</div>
+                        </div>
+                        <div class="property-item">
+                            <div class="property-key">Case Name Prefix</div>
+                            <div class="property-value">{{ testDescriptor.caseNamePrefix }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resize-handle-horizontal"
+                 v-if="showTestList"
+                 :class="{ dragging: isResizingBottom }"
+                 @mousedown="startResizeBottom"></div>
+            <div class="test-list"
+                 :class="{ hidden: !showTestList }"
+                 :style="showTestList ? { height: testListHeight + 'px' } : null">
+                <div v-if="selectedNode" class="test-list-header">
+                    Showing tests for: {{ selectedNode.type === 'param' ? selectedNode.name : selectedNode.type }}
+                    <button class="toolbar-button" @click="selectNode(null)">Show All</button>
+                </div>
+                <div v-else="selectedNode" class="test-list-header">
+                    <span>Number of tests: {{ testCases.length }}</span>
+                </div>
+                <div class="test-list-content">
+                    <div v-if="(selectedNode ? filteredTestCases : testCases).length === 0" class="test-list-empty">
+                        No test cases available
+                    </div>
+                    <div class="test-cases-container" v-else>
+                        <button class="copy-button" @click="copyToClipboard" ref="copyButton">Copy</button>
+                        <pre class="test-cases"><code class="language-cpp" ref="codeBlock">{{ (selectedNode ? filteredTestCases : testCases).join('\n') }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue
+
+        const ExpressionTree = {
+            name: 'ExpressionTree',
+            props: ['node', 'selectedNode', 'globalCollapsed'],
+            emits: ['node-selected', 'load-filtered-list'],
+            data() {
+                return {
+                    isCollapsed: false,
+                    showTooltip: false,
+                    tooltipX: 0,
+                    tooltipY: 0
+                }
+            },
+            watch: {
+                globalCollapsed(newVal) {
+                    this.isCollapsed = newVal;
+                }
+            },
+            mounted() {
+                console.log('ExpressionTree mounted with node:', this.node);
+                if (this.node && this.node.type === 'param') {
+                    console.log('Param values:', this.node.values);
+                }
+            },
+            updated() {
+                if (this.node && this.node.type === 'param') {
+                    console.log('Param updated:', this.node.name, this.node.values);
+                }
+            },
+            methods: {
+                toggleCollapse() {
+                    this.isCollapsed = !this.isCollapsed;
+                    console.log('Toggled collapse:', this.isCollapsed);
+                    console.log('Current node:', this.node);
+                },
+                selectNode(node) {
+                    console.log('Selecting node:', node);
+                    this.$emit('node-selected', node);
+                },
+                showParamTooltip(event, param) {
+                    this.tooltipContent = param;
+                    this.tooltipX = event.clientX;
+                    this.tooltipY = event.clientY;
+                    this.showTooltip = true;
+                },
+                hideTooltip() {
+                    this.showTooltip = false;
+                },
+                getNodeName(node) {
+                    if (!node) return '(...)';
+                    if (node.type === 'param') return node.name;
+                    if (node.type === 'cross') return this.getCollapsedCrossText(node);
+                    if (node.type === 'union') return this.getCollapsedUnionText(node);
+                    return '(...)';
+                },
+                flattenCross(node) {
+                    if (!node || node.type !== 'cross') return node;
+                    return node;
+                },
+                getCollapsedCrossText(node) {
+                    if (!node || !node.items) return '';
+                    return node.items.map(item => {
+                        const name = this.getNodeName(item);
+                        return item.type === 'union' ? `(${name})` : name;
+                    }).join(' × ');
+                },
+                getCollapsedUnionText(node) {
+                    if (!node || !node.items) return '';
+                    return node.items.map(item => {
+                        const name = this.getNodeName(item);
+                        // 只有当子节点是 cross 时才添加括号
+                        return item.type === 'cross' ? `(${name})` : name;
+                    }).join(' + ');
+                }
+            },
+            template: `
+                <div v-if="node" class="node" :class="{'selected': node === selectedNode}">
+                    <template v-if="node.type === 'param'">
+                        <div class="param-card" 
+                             @mouseover="showParamTooltip($event, node)"
+                             @mouseleave="hideTooltip">
+                            <div class="param-card-title"
+                                 @click.stop="selectNode(node)">
+                                <span v-text="node.name"></span>
+                                <span class="id-superscript" v-if="node.id !== null">#{{node.id}}</span>
+                                <span v-if="node.doc" class="param-card-doc" v-text="node.doc"></span>
+                            </div>
+                            <div class="param-values">
+                                <span v-for="(value, index) in node.values" 
+                                      :key="value" 
+                                      class="param-value"
+                                      @click.stop="$emit('load-filtered-list', node.id, index)"
+                                      v-text="value">
+                                </span>
+                            </div>
+                        </div>
+                        <div v-if="showTooltip" class="tooltip"
+                             :style="{left: tooltipX + 'px', top: tooltipY + 'px'}">
+                            <div>Name: <span v-text="node.name"></span></div>
+                            <div v-if="node.doc">Doc: <span v-text="node.doc"></span></div>
+                            <div>Values: <span v-text="(node.values && node.values.length > 0) ? node.values.join(', ') : 'No values'"></span></div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div :class="node.doc ? 'node-title' : 'node-content'">
+                            <span class="collapse-button" @click.stop="toggleCollapse">
+                                <span v-text="isCollapsed ? '▶' : '▼'"></span>
+                            </span>
+                            <span class="node-title-text" @click.stop="selectNode(node)">
+                                <template v-if="node.doc">{{ node.doc }}</template>
+                                <template v-else>
+                                    <template v-if="node.type === 'cross'">{{ getCollapsedCrossText(node) }}</template>
+                                    <template v-else>{{ getCollapsedUnionText(node) }}</template>
+                                </template>
+                                <span class="id-superscript" v-if="node.id !== null">#{{node.id}}</span>
+                            </span>
+                        </div>
+                        <div v-show="!isCollapsed" class="node-body">
+                            <template v-if="node.type === 'cross'">
+                                <div class="cross-node">
+                                    <template v-for="(item, index) in node.items" :key="index">
+                                        <expression-tree 
+                                            :node="item"
+                                            :selected-node="selectedNode"
+                                            :global-collapsed="globalCollapsed"
+                                            @node-selected="selectNode"
+                                            @load-filtered-list="(nodeId, paramValue) => $emit('load-filtered-list', nodeId, paramValue)">
+                                        </expression-tree>
+                                        <span v-if="index < node.items.length - 1" 
+                                              class="cross-operator">×</span>
+                                    </template>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class="union-node">
+                                    <expression-tree 
+                                        v-for="(item, index) in node.items" 
+                                        :key="index"
+                                        :node="item"
+                                        :selected-node="selectedNode"
+                                        :global-collapsed="globalCollapsed"
+                                        @node-selected="selectNode"
+                                        @load-filtered-list="(nodeId, paramValue) => $emit('load-filtered-list', nodeId, paramValue)">
+                                    </expression-tree>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <div v-else class="node">
+                    <div class="node-title">Loading...</div>
+                </div>
+            `
+        }
+
+        const app = createApp({
+            data() {
+                return {
+                    expression: null,
+                    selectedNode: null,
+                    globalCollapsed: false,
+                    showFileList: true,
+                    showPropertyView: true,
+                    showTestList: true,
+                    testFiles: [],
+                    testCases: [],
+                    filteredTestCases: [],
+                    fileListWidth: 250,
+                    propertyViewWidth: 300,
+                    testListHeight: 200,
+                    isResizingLeft: false,
+                    isResizingRight: false,
+                    isResizingBottom: false,
+                    startX: 0,
+                    startY: 0,
+                    startWidth: 0,
+                    startHeight: 0,
+                    testDescriptor: {
+                        suiteName: '',
+                        includeFiles: [],
+                        testGeneratorMacro: '',
+                        caseNamePrefix: ''
+                    },
+                    selectedParamValue: null,
+                }
+            },
+            methods: {
+                selectNode(node) {
+                    console.log('Selected node:', node);
+                    this.selectedNode = node;
+                    if (node && node.id) {
+                        this.loadFilteredTestList(node.id);
+                    } else {
+                        this.filteredTestCases = [];  // Clear filtered test cases
+                        this.loadTestList();  // Load full test list
+                    }
+                },
+                async loadExpression() {
+                    try {
+                        console.log('Loading expression...');
+                        const response = await axios.get('/api/expression');
+                        console.log('Response:', response);
+                        console.log('Response data:', response.data);
+                        this.expression = response.data;
+                        // 获取 TestDescriptor 信息
+                        const descriptorResponse = await axios.get('/api/test_descriptor');
+                        this.testDescriptor = descriptorResponse.data;
+                        console.log('Expression set:', this.expression);
+                    } catch (error) {
+                        console.error('Error loading expression:', error);
+                        if (error.response) {
+                            console.error('Response data:', error.response.data);
+                        }
+                    }
+                },
+                async loadTestFiles() {
+                    try {
+                        const response = await axios.get('/api/test_files');
+                        this.testFiles = response.data;
+                    } catch (error) {
+                        console.error('Error loading test files:', error);
+                    }
+                },
+                async loadTestFile(file) {
+                    try {
+                        await axios.get(`/api/load_test/${file.path}`);
+                        await this.loadTestFiles();  // Refresh file list
+                        await this.loadExpression(); // Load new expression
+                        await this.loadTestList();   // Load test list
+                    } catch (error) {
+                        console.error('Error loading test file:', error);
+                    }
+                },
+                toggleAll() {
+                    this.globalCollapsed = !this.globalCollapsed;
+                },
+                toggleFileList() {
+                    this.showFileList = !this.showFileList;
+                    if (this.showFileList && this.fileListWidth < 150) {
+                        this.fileListWidth = 250;
+                    }
+                },
+                togglePropertyView() {
+                    this.showPropertyView = !this.showPropertyView;
+                    if (this.showPropertyView && this.propertyViewWidth < 200) {
+                        this.propertyViewWidth = 300;
+                    }
+                },
+                toggleTestList() {
+                    this.showTestList = !this.showTestList;
+                    if (this.showTestList && this.testListHeight < 100) {
+                        this.testListHeight = 200;
+                    }
+                },
+                startResizeLeft(e) {
+                    this.isResizingLeft = true;
+                    this.startX = e.clientX;
+                    this.startWidth = this.fileListWidth;
+                    e.preventDefault();
+                },
+                
+                startResizeRight(e) {
+                    this.isResizingRight = true;
+                    this.startX = e.clientX;
+                    this.startWidth = this.propertyViewWidth;
+                    e.preventDefault();
+                },
+                
+                startResizeBottom(e) {
+                    this.isResizingBottom = true;
+                    this.startY = e.clientY;
+                    this.startHeight = this.testListHeight;
+                    e.preventDefault();
+                },
+                
+                handleMouseMove(e) {
+                    if (this.isResizingLeft) {
+                        const diff = e.clientX - this.startX;
+                        const newWidth = Math.max(150, Math.min(500, this.startWidth + diff));
+                        this.fileListWidth = newWidth;
+                    } else if (this.isResizingRight) {
+                        const diff = this.startX - e.clientX;
+                        const newWidth = Math.max(200, Math.min(600, this.startWidth + diff));
+                        this.propertyViewWidth = newWidth;
+                    } else if (this.isResizingBottom) {
+                        const diff = this.startY - e.clientY;
+                        const newHeight = Math.max(100, Math.min(window.innerHeight * 0.5, this.startHeight + diff));
+                        this.testListHeight = newHeight;
+                    }
+                },
+                
+                handleMouseUp() {
+                    this.isResizingLeft = false;
+                    this.isResizingRight = false;
+                    this.isResizingBottom = false;
+                },
+                async loadTestList() {
+                    try {
+                        const response = await axios.get('/api/test_list');
+                        this.testCases = response.data;
+                    } catch (error) {
+                        console.error('Error loading test list:', error);
+                    }
+                },
+                async loadFilteredTestList(nodeId, valueIndex = null) {
+                    try {
+                        console.log('Loading filtered test list:', nodeId, valueIndex);
+                        this.selectedParamValue = valueIndex;
+                        
+                        let url = `/api/test_list/${nodeId}`;
+                        if (valueIndex !== null) {
+                            url += `/index/${valueIndex}`;
+                        }
+                        
+                        const response = await axios.get(url);
+                        this.filteredTestCases = response.data;
+                        this.testCases = response.data;  // Update main test cases as well
+                        console.log('Filtered test cases:', this.filteredTestCases);
+                    } catch (error) {
+                        console.error('Error loading filtered test list:', error);
+                    }
+                },
+                async copyToClipboard() {
+                    const codeText = (this.selectedNode ? this.filteredTestCases : this.testCases).join('\n');
+                    try {
+                        await navigator.clipboard.writeText(codeText);
+                        const copyButton = this.$refs.copyButton;
+                        copyButton.textContent = 'Copied!';
+                        copyButton.classList.add('copied');
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                            copyButton.classList.remove('copied');
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                    }
+                },
+                highlightCode() {
+                    if (this.$refs.codeBlock) {
+                        hljs.highlightElement(this.$refs.codeBlock);
+                    }
+                },
+            },
+            updated() {
+                this.$nextTick(() => {
+                    this.highlightCode();
+                });
+            },
+            mounted() {
+                console.log('App mounted, loading data...');
+                this.loadTestFiles();
+                this.loadExpression();
+                this.loadTestList();
+            }
+        });
+
+        app.component('expression-tree', ExpressionTree);
+        app.mount('#app');
+    </script>
+</body>
+</html>
+{% endraw %} 
