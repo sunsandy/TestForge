@@ -14,3 +14,19 @@
 3.9 每个表达式、和参数，都应当可以被选中。选中后，右侧属性视图应当显示选中节点的属性。
 4. 表达式的模型类是Union和Cross，参数的模型类是Param。需要为他们生成对应的View或ViewModel类型供UI渲染。
 5. 整个表达式，保存于一个.py文件中。具体的例子，请参考BlendTests.py。
+
+# Installation
+
+* Windows
+    * MingW with GCC, CMake & Python with `venv` or `conda`
+    * OR GCC + bat file, CMake might be changed for Windows environment.
+* Install dependencies:
+    * flask (`pip install` or `conda install`)
+
+# How to run
+
+1. Write the test plan in `pforge/plans/`.
+2. Run `tgen.sh` to generate the test cases.
+3. Run `python tview.py` to start the test case viewer.
+   * You might be change the `current_test_file` in the script to test view different test plan.
+   * It might be configurable in soon.
