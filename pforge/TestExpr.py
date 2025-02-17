@@ -205,7 +205,10 @@ class TestDescriptor:
     Cpp_CaseNamePrefix: str
     
     def get_test_list(self):
-        yield from GenerateList(self.GenExpr)
+        yield from map(
+            lambda pvOrList: [pvOrList] if isinstance(pvOrList, PVPair) else pvOrList,
+            GenerateList(self.GenExpr)
+        )
 
 # Explicitly export classes and functions
 __all__ = ["Expr", "Param", "Union", "Cross", "TestDescriptor", "GenerateList"]
