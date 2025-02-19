@@ -1,15 +1,11 @@
 import enum
-from dataclasses import dataclass
-
-@dataclass
 class DXGIDescriptor:
-    dtype: str
-    size: int
-    blend: bool # blending 
-    #dtype: bool # logic
-
+    def __init__(self, dtype: str, size: int, blendable: bool):
+        self.dtype = dtype
+        self.size = size
+        self.blendable = blendable
+    
 class DXGIFormat(enum.Enum):
-
     R8_UINT = DXGIDescriptor("uint", 1, False)
     R8_SINT = DXGIDescriptor("sint", 1, False)
     R8_UNORM = DXGIDescriptor("unorm", 1, True)
@@ -78,7 +74,6 @@ class DXGIFormat(enum.Enum):
     D24X8 = DXGIDescriptor("unorm", 4, False)
     D32 = DXGIDescriptor("float", 4, False)
     D32S8 = DXGIDescriptor("float", 4, False)
-        
 
     def SRGB(self):
         return ("SRGB" in self.name)
