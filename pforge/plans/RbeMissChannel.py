@@ -11,30 +11,32 @@ from pforge.TestExpr import Cross, Param, TestDescriptor, Union
 # ToArg is a function to convert the param value to a string for C++ code generation.
 # ToDisplay is a function to convert the param value to a string for web view.
 # BlendOp = Param("BlendOp", ["true", "false"])
-# Format = Param(
-#     "Format",
-#     [f for f in DXGIFormat if f.value.blendable==True],
-#     ToArg=lambda f: f"Format::{f.name}",
-# )
-
-BlendEn = Param(
-    "BlendEn",
-    [""],
-    ToArg=lambda f: f"true",
-)
-
 Format = Param(
     "Format",
-    [DXGIFormat.R8G8B8A8_UNORM, DXGIFormat.R16G16B16A16_FLOAT, DXGIFormat.R32G32B32A32_FLOAT],
-    ToArg=lambda f: f"Format::{f.value.alias}",
+    ["R8G8_UNORM", "R8G8B8A8_UNORM", "R16G16_FLOAT", "R16G16B16A16_FLOAT", "R32G32_FLOAT", "R32G32B32A32_FLOAT"]
 )
 
-
-BlendOP = Param(
-    "BlendOP",
-    [f for f in BlendOp],
-    ToArg=lambda f: f"BlendOp::{f.name}",
+PS_O = Param(
+    "PS_O",
+    ["oxyzw", "oxyz", "oxy"]
 )
+
+MissChannel = Param(
+    "ColorType",
+    ["srca", "dsta", "srcb"]
+)
+
+UserParams = Param("UserParams", 
+                   ["dsta_oxyzw_r8g8_unorm", 
+                    "dsta_oxyzw_r16g16_float",
+                    "dsta_oxyzw_r32g32_float", 
+                    "srca_oxyz_r8g8b8a8_unorm",        
+                    "srca_oxyz_r16g16b16a16_float",        
+                    "srca_oxyz_r32g32b16a16_float",        
+                    "srcb_oxyz_r8g8b8a8_unorm",        
+                    "srcb_oxyz_r16g16b16a16_float",    
+                    "srcb_oxyz_r32g32b16a16_float"],
+    ToArg=lambda f: f"RG8_UNORM",)
 
 clear_tests = TestDescriptor(
     # Test description
@@ -43,12 +45,14 @@ clear_tests = TestDescriptor(
     # Post filter is not implemented yet.
     # PostFilter=lambda test: test.name.endswith("_f"),
 
-    GenExpr=BlendEn*BlendOP * Format,
+    GenExpr=UserParams,
+
+    #GenExpr=PS_O * Format,
 
     # C++ code generation
     Cpp_IncludeFiles=[
         "TestFramework/RbeBlendOperationTest.hpp",
     ],
-    Cpp_TestGeneratorMacro="ADD_BLEND_OP_TEST",
-    Cpp_CaseNamePrefix="rbe_blend_",
+    Cpp_TestGeneratorMacro="ADD_BLEND_MISS_CHANNEL_TEST",
+    Cpp_CaseNamePrefix="rbe_miss_ch_",
 )

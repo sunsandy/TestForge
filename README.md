@@ -26,7 +26,7 @@
 # How to run
 
 1. Write the test plan in `pforge/plans/`.
-2. Run `tgen.sh` to generate the test cases.
+2. Run `tgen.sh` to generate the test cases.(python tgen.py pforge/plans/RbeWriteOnly.py CppTests/)
 3. Run `python tview.py` to start the test case viewer.
    * You might be change the `current_test_file` in the script to test view different test plan.
    * It might be configurable in soon.

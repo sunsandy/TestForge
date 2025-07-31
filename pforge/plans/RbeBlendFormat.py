@@ -10,10 +10,17 @@ from pforge.TestExpr import Cross, Param, TestDescriptor, Union
 # ToArg is a function to convert the param value to a string for C++ code generation.
 # ToDisplay is a function to convert the param value to a string for web view.
 # BlendOp = Param("BlendOp", ["true", "false"])
+BlendEn = Param(
+    "BlendEn",
+    [""],
+    ToArg=lambda f: f"true",
+)
+
+
 Format = Param(
     "Format",
-    [f for f in DXGIFormat if f.value.blend==True],
-    ToArg=lambda f: f"Format::{f.name}",
+    [f for f in DXGIFormat if f.value.blendable==True],
+    ToArg=lambda f: f"Format::{f.value.alias}",
 )
 
 
@@ -24,7 +31,7 @@ clear_tests = TestDescriptor(
     # Post filter is not implemented yet.
     # PostFilter=lambda test: test.name.endswith("_f"),
 
-    GenExpr=Format,
+    GenExpr=BlendEn*Format,
 
     # C++ code generation
     Cpp_IncludeFiles=[

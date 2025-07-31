@@ -108,7 +108,7 @@ def convert_test_expr(expr):
 
 # Global test loader instance
 test_loader = TestLoader()
-current_test_file = "pforge/plans/BlendTests.py"  # Default test file
+current_test_file = "pforge/plans/RbeSpNumWo.py"  # Default test file
 
 @app.route('/')
 def index():
@@ -261,4 +261,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     app.logger.setLevel(logging.DEBUG)
     print("Starting Flask server...")
-    app.run(debug=True, port=5000, host='0.0.0.0')  # Use default Flask port 
+    app.run(debug=True, port=8900, host='0.0.0.0')  # Use default Flask port 

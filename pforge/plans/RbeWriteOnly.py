@@ -12,8 +12,8 @@ from pforge.TestExpr import Cross, Param, TestDescriptor, Union
 # BlendOp = Param("BlendOp", ["true", "false"])
 Format = Param(
     "Format",
-    [f for f in DXGIFormat],
-    ToArg=lambda f: f"Format::{f.name}",
+    [f for f in DXGIFormat if f.value.colorable==True],
+    ToArg=lambda f: f"Format::{f.value.alias}",
 )
 
 

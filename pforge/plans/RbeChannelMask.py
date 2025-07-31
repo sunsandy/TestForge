@@ -1,5 +1,6 @@
 from pforge.params.DXGIFormats import DXGIFormat
 from pforge.params.BlendParams import BlendOp
+from pforge.params.BlendParams import CHMSK_O
 from pforge.TestExpr import Cross, Param, TestDescriptor, Union
 
 # Param values should be a list of objects:
@@ -10,22 +11,40 @@ from pforge.TestExpr import Cross, Param, TestDescriptor, Union
 #     e.g.: ToName=lambda v: f"b{v[0]}" for value v[0] of BlendOp generates "test_bt" and "test_bf" for values "true" and "false".
 # ToArg is a function to convert the param value to a string for C++ code generation.
 # ToDisplay is a function to convert the param value to a string for web view.
-# BlendOp = Param("BlendOp", ["true", "false"])
-# Format = Param(
-#     "Format",
-#     [f for f in DXGIFormat if f.value.blendable==True],
-#     ToArg=lambda f: f"Format::{f.name}",
+
+
+# ChMsk = Param(
+#     "BlendEn",
+#     ["r", "rg", "rgb"],
+#     ToArg=lambda f: f"{f}",
 # )
 
-BlendEn = Param(
+
+ChMsk = Param(
     "BlendEn",
-    [""],
-    ToArg=lambda f: f"true",
+    [f for f in CHMSK_O],
+    ToArg=lambda f: f"{f.value.alias}",
 )
+
 
 Format = Param(
     "Format",
-    [DXGIFormat.R8G8B8A8_UNORM, DXGIFormat.R16G16B16A16_FLOAT, DXGIFormat.R32G32B32A32_FLOAT],
+    [DXGIFormat.R8G8B8A8_UNORM, 
+     DXGIFormat.R8G8_UNORM, 
+     DXGIFormat.R16G16B16A16_FLOAT, 
+     DXGIFormat.R16G16_FLOAT, 
+     DXGIFormat.R32G32B32A32_FLOAT, 
+     DXGIFormat.R32G32_FLOAT, 
+     DXGIFormat.R11G11B10_FLOAT, 
+     DXGIFormat.R10G10B10A2_UNORM,
+     DXGIFormat.R8G8B8A8_UINT, 
+     DXGIFormat.R8G8_UINT, 
+     DXGIFormat.R16G16B16A16_UINT, 
+     DXGIFormat.R16G16_UINT, 
+     DXGIFormat.R32G32B32A32_UINT, 
+     DXGIFormat.R32G32_UINT, 
+     DXGIFormat.R10G10B10A2_UINT
+     ],
     ToArg=lambda f: f"Format::{f.value.alias}",
 )
 
@@ -43,12 +62,12 @@ clear_tests = TestDescriptor(
     # Post filter is not implemented yet.
     # PostFilter=lambda test: test.name.endswith("_f"),
 
-    GenExpr=BlendEn*BlendOP * Format,
+    GenExpr=ChMsk * Format,
 
     # C++ code generation
     Cpp_IncludeFiles=[
         "TestFramework/RbeBlendOperationTest.hpp",
     ],
-    Cpp_TestGeneratorMacro="ADD_BLEND_OP_TEST",
-    Cpp_CaseNamePrefix="rbe_blend_",
+    Cpp_TestGeneratorMacro="ADD_CHANNEL_MASK_TEST",
+    Cpp_CaseNamePrefix="rbe_chmsk_",
 )
